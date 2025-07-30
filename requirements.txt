@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+openai
+pinecone
+sentence-transformers
+httpx
+beautifulsoup4
+SQLAlchemy
+python-dotenv

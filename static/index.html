@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PMC Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      min-height: 100vh;
+    }
+    #chatContainer {
+      width: 340px;
+      background: white;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 32px 0 0 24px;
+      position: fixed; /* So it stays on left or bottom if desired */
+      bottom: 20px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #b10039;
+      color: white;
+      padding: 12px 16px 12px 54px;
+      font-size: 1.28rem;
+      font-weight: 600;
+      text-align: left;
+      position: relative;
+      min-height: 48px;
+    }
+    .pmc-logo-icon {
+      width: 38px;
+      height: 38px;
+      position: absolute;
+      top: 9px;
+      left: 10px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      object-fit: contain;
+    }
+
+    #chatBox {
+      flex-grow: 1;
+      padding: 18px 12px 4px 12px;
+      overflow-y: auto;
+      background: #f5f6fa;
+      /* smaller height for compact look */
+      min-height: 240px;
+      max-height: 350px;
+    }
+    .welcome-block {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+    .pmc-logo-big {
+      width: 12vw;
+      margin: 0 auto 10px auto;
+    }
+    .welcome-message {
+      display: inline-block;
+      background: #fff;
+      color: #222;
+      border-radius: 10px;
+      padding: 15px 14px 12px 14px;
+      font-size: 1.07rem;
+      box-shadow: 0 1.5px 4px rgba(0,0,0,0.05);
+      margin-bottom: 9px;
+    }
+    .start-chat-btn {
+      display: block;
+      margin: 0 auto 8px auto;
+      background: white;
+      color: #b10039;
+      border: 2px solid #b10039;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .start-chat-btn:hover {
+      background: #ffe4ec;
+    }
+    /* Regular chat messages (hidden until after start) */
+    .message { margin-bottom: 12px; line-height: 1.45;}
+    .user { text-align: right; font-weight: 600; color: #111;font-size: 0.85rem;padding: 8px 10px; background: #e9e9e9; margin-left: 30%; border-radius: 18px;}
+    .bot {
+      background: #fbeaea;
+      border-left: 4px solid #b10039;
+      padding: 10px 14px;
+      border-radius: 11px;
+      max-width: 83%;
+      margin: 3px 0;
+      word-break: break-word;
+      color: #222;
+      font-size: 0.85rem;
+    }
+    #inputContainer {
+      display: flex;
+      padding: 8px 12px;
+      border-top: 1px solid #eee;
+      background: #fff;
+      align-items: center;
+    }
+    #userInput {
+      flex-grow: 1;
+      padding: 9px 14px;
+      border-radius: 18px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      outline: none;
+      min-width: 0;
+    }
+    #sendBtn {
+      background: #b10039;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 7px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0;
+      transition: background .2s;
+    }
+    #sendBtn:hover { background: #87002b;}
+    #sendBtn svg {
+      display: block;
+      margin: auto;
+      width: 24px;
+      height: 24px;
+    }
+    a { color: #b10039; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div id="chatContainer">
+    <header>
+      <img src="static/pmc-logo.jpg" alt="PMC Logo" class="pmc-logo-icon" />
+      PMC Chatbot
+    </header>
+    <div id="chatBox">
+      <div class="welcome-block" id="welcomeBlock">
+        <!-- Use your logo path or a base64 image for security -->
+        <img class="pmc-logo-big" src="static/pmc-logo.jpg" alt="PMC Logo" />
+        <div class="welcome-message">
+          Welcome to Virtual Assistant of Pune Municipal Corporation 🙏
+        </div>
+        <button class="start-chat-btn" id="startChatBtn">Start the chat</button>
+      </div>
+      <!-- Hide/show chat messages here dynamically -->
+    </div>
+    <div id="inputContainer" style="display: none;">
+      <input type="text" id="userInput" placeholder="Ask your question..." autocomplete="off" />
+      <button id="sendBtn">
+        <!-- Material arrow icon SVG -->
+        <svg viewBox="0 0 24 24"><path fill="white" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+      </button>
+    </div>
+  </div>
+  <script>
+    const chatBox = document.getElementById("chatBox");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const inputContainer = document.getElementById("inputContainer");
+    const welcomeBlock = document.getElementById("welcomeBlock");
+    const startChatBtn = document.getElementById("startChatBtn");
+    let sessionId = crypto.randomUUID();
+    let chatStarted = false;
+
+    function formatMessage(text) {
+      text = text.replace(/(https?:\/\/[^\s)]+)([).,]?)/g, '<a href="$1" target="_blank">$1</a>$2');
+      return text.replace(/\n/g, "<br>");
+    }
+
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.className = `message ${sender}`;
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", hour12: false});
+      msg.innerHTML =
+        `<div>${sender === "bot" ? formatMessage(text) : text}</div>
+        <div style="font-size: 0.94em; color: #aaa; margin-top: 4px; text-align: ${sender === "bot" ? "left" : "right"};">
+          ${timeString}
+        </div>`;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const question = userInput.value.trim();
+      if (!question) return;
+      addMessage(question, "user");
+      userInput.value = "";
+      const response = await fetch("http://localhost:10000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: question, session_id: sessionId }),
+      });
+      const data = await response.json();
+      addMessage(data.answer, "bot");
+    }
+
+    sendBtn.onclick = sendMessage;
+    userInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    startChatBtn.onclick = function () {
+      welcomeBlock.style.display = "none";
+      inputContainer.style.display = "flex";
+      chatStarted = true;
+    };
+
+    document.addEventListener("keydown", (e) => {
+      if (!chatStarted && (e.key === "Enter" || e.key === " ")){
+        startChatBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>
