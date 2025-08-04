@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from app.rag import generate_answer
 import uuid
@@ -10,6 +11,15 @@ from fastapi.staticfiles import StaticFiles
 load_dotenv()  # ✅ this will load the .env file before anything else
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 # Mount static folder at /static
 app.mount("/static", StaticFiles(directory="static"), name="static")
