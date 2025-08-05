@@ -172,13 +172,24 @@
     </div>
   </div>
   <script>
+    // Global error handler to catch any JavaScript errors
+    window.addEventListener('error', function(e) {
+      console.error('JavaScript error:', e.error);
+    });
+    
     const chatBox = document.getElementById("chatBox");
     const userInput = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
     const inputContainer = document.getElementById("inputContainer");
     const welcomeBlock = document.getElementById("welcomeBlock");
     const startChatBtn = document.getElementById("startChatBtn");
-    let sessionId = crypto.randomUUID();
+    
+    // Generate a simple session ID that works in all browsers
+    function generateSessionId() {
+      return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    let sessionId = generateSessionId();
     let chatStarted = false;
 
     function formatMessage(text) {
@@ -205,13 +216,24 @@
       if (!question) return;
       addMessage(question, "user");
       userInput.value = "";
-      const response = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: question, session_id: sessionId }),
-      });
-      const data = await response.json();
-      addMessage(data.answer, "bot");
+      
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: question, session_id: sessionId }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        addMessage(data.answer, "bot");
+      } catch (error) {
+        console.error("Error sending message:", error);
+        addMessage("Sorry, there was an error processing your request. Please try again.", "bot");
+      }
     }
 
     sendBtn.onclick = sendMessage;
@@ -224,6 +246,20 @@
       inputContainer.style.display = "flex";
       chatStarted = true;
     };
+
+    // Add a fallback event listener using addEventListener
+    if (startChatBtn) {
+      startChatBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (welcomeBlock && inputContainer) {
+          welcomeBlock.style.display = "none";
+          inputContainer.style.display = "flex";
+          chatStarted = true;
+        }
+      });
+    }
 
     document.addEventListener("keydown", (e) => {
       if (!chatStarted && (e.key === "Enter" || e.key === " ")){
