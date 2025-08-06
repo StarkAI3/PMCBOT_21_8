@@ -1,6 +1,6 @@
 {
-  "total_api_urls": 408,
-  "found_mappings": 385,
+  "total_api_urls": 410,
+  "found_mappings": 387,
   "mappings": [
     {
       "api_url": "https://webadmin.pmc.gov.in/api/basic-page/human-resource-management-system?lang=en",
@@ -2639,10 +2639,10 @@
       "api_url": "https://webadmin.pmc.gov.in/api/listing-api/circular?&page_no=1&limit=300&sort_by=undefined&status=&lang=en&vocabulary=department",
       "api_type": "listing-api",
       "api_slug": "department",
-      "frontend_url": "https://www.pmc.gov.in/en/b/department",
+      "frontend_url": "https://www.pmc.gov.in/en/l/circular",
       "status": "Found",
       "content_info": {
-        "url": "https://www.pmc.gov.in/en/b/department",
+        "url": "https://www.pmc.gov.in/en/l/circular",
         "title": "",
         "content_length": 191,
         "headings": [],
@@ -3446,7 +3446,7 @@
       "api_url": "https://webadmin.pmc.gov.in/api/listing-api/crematoriums?&page_no=1&limit=12&sort_by=&status=&lang=en&vocabulary=ward",
       "api_type": "listing-api",
       "api_slug": "ward",
-      "frontend_url": null,
+      "frontend_url": "https://www.pmc.gov.in/en/list/w/crematoriums",
       "status": "No working frontend URL found",
       "content_info": null
     },
@@ -5960,6 +5960,36 @@
       "frontend_url": null,
       "status": "No working frontend URL found",
       "content_info": null
+    },
+    {
+      "api_url": "https://webadmin.pmc.gov.in/api/hospital/pmc_hospitals?hospital_category=&page=1&limit=75hospital_name=&sort_by=undefined&lang=en",
+      "api_type": "hospital",
+      "api_slug": "pmc_hospitals",
+      "frontend_url": "https://www.pmc.gov.in/en/pmc-hospital",
+      "status": "Found",
+      "content_info": {
+        "url": "https://www.pmc.gov.in/en/pmc-hospital",
+        "title": "",
+        "content_length": 191,
+        "headings": [],
+        "paragraphs_count": 0,
+        "first_paragraph": ""
+      }
+    },
+    {
+      "api_url": "https://webadmin.pmc.gov.in/api/listing-api/theatres?&page_no=1&limit=15&sort_by=&status=&lang=en&order=desc",
+      "api_type": "listing-api",
+      "api_slug": "theatres",
+      "frontend_url": "https://www.pmc.gov.in/en/theater",
+      "status": "Found",
+      "content_info": {
+        "url": "https://www.pmc.gov.in/en/theater",
+        "title": "",
+        "content_length": 191,
+        "headings": [],
+        "paragraphs_count": 0,
+        "first_paragraph": ""
+      }
     }
   ]
 }

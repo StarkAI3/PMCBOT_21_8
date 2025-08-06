@@ -407,3 +407,5 @@ https://webadmin.pmc.gov.in/api/menu-data/pmc-services-citizen?lang=en,menu-data
 https://webadmin.pmc.gov.in/api/listing-api/department_useful_links?page_no=1&limit=100&order=asc&lang=en&slug=building-development&vocabulary=department,listing-api,department,https://www.pmc.gov.in/en/b/department,Found,,191,,
 https://webadmin.pmc.gov.in/api/listing-api/department_useful_links?page_no=1&limit=100&order=asc&lang=en&slug=building-development&vocabulary=department,listing-api,department,https://www.pmc.gov.in/en/b/department,Found,,191,,
 https://webadmin.pmc.gov.in/api/listing-api/disaster_management?&page_no=1&limit=1000&sort_by=undefined&status=undefined&lang=en&order=asc,listing-api,listing-api,,No working frontend URL found,,,,
+https://webadmin.pmc.gov.in/api/hospital/pmc_hospitals?hospital_category=&page=1&limit=75hospital_name=&sort_by=undefined&lang=en,hospital,pmc_hospitals,https://www.pmc.gov.in/en/pmc-hospital,Found,,191,,
+https://webadmin.pmc.gov.in/api/listing-api/theatres?&page_no=1&limit=15&sort_by=&status=&lang=en&order=desc,listing-api,theatres,https://www.pmc.gov.in/en/theater,Found,,191,,
