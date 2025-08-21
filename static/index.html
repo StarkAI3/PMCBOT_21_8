@@ -103,6 +103,18 @@
       color: #222;
       font-size: 0.85rem;
     }
+    .language-indicator {
+      font-size: 0.7rem;
+      color: #666;
+      margin-bottom: 4px;
+      font-style: italic;
+    }
+    .language-indicator.english::before {
+      content: "🇺🇸 ";
+    }
+    .language-indicator.marathi::before {
+      content: "🇮🇳 ";
+    }
     #inputContainer {
       display: flex;
       padding: 8px 12px;
@@ -158,13 +170,14 @@
         <img class="pmc-logo-big" src="static/pmc-logo.jpg" alt="PMC Logo" />
         <div class="welcome-message">
           Welcome to Virtual Assistant of Pune Municipal Corporation 🙏
+          <br><small>Ask questions in English or Marathi</small>
         </div>
         <button class="start-chat-btn" id="startChatBtn">Start the chat</button>
       </div>
       <!-- Hide/show chat messages here dynamically -->
     </div>
     <div id="inputContainer" style="display: none;">
-      <input type="text" id="userInput" placeholder="Ask your question..." autocomplete="off" />
+      <input type="text" id="userInput" placeholder="Ask your question in English or Marathi..." autocomplete="off" />
       <button id="sendBtn">
         <!-- Material arrow icon SVG -->
         <svg viewBox="0 0 24 24"><path fill="white" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
@@ -197,14 +210,22 @@
       return text.replace(/\n/g, "<br>");
     }
 
-    function addMessage(text, sender) {
+    function addMessage(text, sender, language = null) {
       const msg = document.createElement("div");
       msg.className = `message ${sender}`;
       const now = new Date();
       const timeString = now.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", hour12: false});
-      msg.innerHTML =
-        `<div>${sender === "bot" ? formatMessage(text) : text}</div>
-        <div style="font-size: 0.94em; color: #aaa; margin-top: 4px; text-align: ${sender === "bot" ? "left" : "right"};">
+      
+      let messageContent = `<div>${sender === "bot" ? formatMessage(text) : text}</div>`;
+      
+      // Add language indicator for bot messages if language is detected
+      if (sender === "bot" && language) {
+        const languageText = language === 'marathi' ? 'मराठी' : 'English';
+        messageContent = `<div class="language-indicator ${language}">${languageText}</div>` + messageContent;
+      }
+      
+      msg.innerHTML = messageContent + 
+        `<div style="font-size: 0.94em; color: #aaa; margin-top: 4px; text-align: ${sender === "bot" ? "left" : "right"};">
           ${timeString}
         </div>`;
       chatBox.appendChild(msg);
@@ -229,7 +250,7 @@
         }
         
         const data = await response.json();
-        addMessage(data.answer, "bot");
+        addMessage(data.answer, "bot", data.detected_language);
       } catch (error) {
         console.error("Error sending message:", error);
         addMessage("Sorry, there was an error processing your request. Please try again.", "bot");

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from app.rag import generate_answer
+from app.rag import generate_answer, detect_language
 import uuid
 import os
 from dotenv import load_dotenv
@@ -36,5 +36,16 @@ class ChatInput(BaseModel):
 @app.post("/chat")
 def chat(input: ChatInput):
     session_id = input.session_id or str(uuid.uuid4())
+    
+    # Detect language of the query
+    detected_language = detect_language(input.query)
+    
+    # Generate answer
     answer, sources = generate_answer(input.query, session_id)
-    return {"session_id": session_id, "answer": answer, "sources": sources}
+    
+    return {
+        "session_id": session_id, 
+        "answer": answer, 
+        "sources": sources,
+        "detected_language": detected_language
+    }

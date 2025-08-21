@@ -5,10 +5,18 @@ from bs4 import BeautifulSoup
 
 def get_public_url(api_url: str) -> str:
     """
-    Convert a PMC Drupal API URL to the corresponding public-facing URL.
-    E.g., https://webadmin.pmc.gov.in/api/basic-page/fire-brigade?lang=en
-       → https://www.pmc.gov.in/en/fire-brigade
+    Convert a PMC Drupal API URL to the corresponding public-facing URL using clean mappings.
     """
+    # Import URL mapper to use clean mappings
+    try:
+        from app.url_mapper import url_mapper
+        frontend_url = url_mapper.get_frontend_url(api_url)
+        if frontend_url:
+            return frontend_url
+    except ImportError:
+        pass
+    
+    # Fallback to simple pattern matching if URL mapper not available
     if "api/basic-page/" in api_url:
         slug = api_url.split("api/basic-page/")[-1].split("?")[0]
         return f"https://www.pmc.gov.in/en/{slug}"

@@ -51,7 +51,10 @@ fail_count = 0
 for doc in docs:
     try:
         embedding = embed_text(doc["text"])
-        upsert_payload.append((doc["id"], embedding, doc["metadata"]))
+        # Add the text content to metadata so it can be retrieved during RAG
+        metadata_with_text = doc["metadata"].copy()
+        metadata_with_text["text"] = doc["text"]
+        upsert_payload.append((doc["id"], embedding, metadata_with_text))
     except Exception as e:
         print(f"⚠️ Failed to embed {doc['id']}: {e}")
         fail_count += 1
