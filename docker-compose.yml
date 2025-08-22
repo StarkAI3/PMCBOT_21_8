@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  pmcbot:
+    build: .
+    container_name: pmcbot-app
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env:ro
+    environment:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s 
