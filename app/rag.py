@@ -6,6 +6,30 @@ from openai import OpenAI
 import re
 import os
 from typing import List
+from datetime import datetime
+
+
+def _ensure_logs_dir_exists() -> None:
+    logs_dir = os.path.join("logs")
+    try:
+        os.makedirs(logs_dir, exist_ok=True)
+    except Exception:
+        # Best-effort logging directory creation; ignore failures
+        pass
+
+
+def _append_log_entry(text: str) -> None:
+    try:
+        _ensure_logs_dir_exists()
+        log_path = os.path.join("logs", "logs.txt")
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            log_file.write(text)
+            if not text.endswith("\n"):
+                log_file.write("\n")
+            log_file.write("\n")
+    except Exception:
+        # Avoid breaking the request on logging errors
+        pass
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -27,10 +51,9 @@ def detect_language(query: str) -> str:
     if devanagari_chars > latin_chars:
         return 'marathi'
     
-    # For Latin script text, use LLM to detect if it's Romanized Marathi
+    # For Latin script text, run lightweight rule checks before any LLM call
     query_lower = query.lower()
-    
-    # Quick check for obvious Marathi indicators first (for efficiency)
+
     marathi_indicators = {
         'kasa', 'kase', 'kay', 'kaay', 'kuthe', 'kadhi', 'kiti', 'konala', 'kona',
         'milwaycha', 'milwayche', 'milwaychi', 'karaycha', 'karayche', 'karaychi',
@@ -39,26 +62,41 @@ def detect_language(query: str) -> str:
         'sangaycha', 'sangayche', 'sangaychi', 'hotay', 'hoti', 'hota', 'hotat',
         'aadhaar', 'mahapalika', 'nagar', 'palika',
     }
-    
-    # If we find obvious Marathi indicators, return Marathi immediately
+
     words_in_query = query_lower.split()
+    marathi_indicator_count = 0
     for word in words_in_query:
         clean_word = ''.join(c for c in word if c.isalnum())
         if clean_word in marathi_indicators:
-            return 'marathi'
-    
-    # For ambiguous cases, use LLM to detect language
+            marathi_indicator_count += 1
+
+    marathi_patterns = [
+        r'\b(kasa|kase|kay|kaay|kuthe|kadhi|kiti|konala|kona)\s+\w+',
+        r'\w+\s+(cha|che|chi|ne|la|na|ta|te|ti|sa|se|si)\b',
+        r'\b(milwaycha|milwayche|milwaychi|karaycha|karayche|karaychi)\b',
+        r'\b(ghaycha|ghayche|ghaychi|deyacha|deyache|deyachi)\b',
+        r'\b(bharaycha|bharayche|bharaychi|mahnaycha|mahnayche|mahnaychi)\b',
+        r'\w+\s+(kasa|kase|kay|kaay|kuthe|kadhi|kiti|konala|kona)\s+\w+',
+    ]
+    pattern_matches = 0
+    for pattern in marathi_patterns:
+        if re.search(pattern, query_lower):
+            pattern_matches += 1
+
+    # If there are no Marathi indicators or patterns at all, treat as English
+    if marathi_indicator_count == 0 and pattern_matches == 0:
+        return 'english'
+
+    # Strong Marathi signals: classify as Marathi without LLM
+    if marathi_indicator_count >= 2 or pattern_matches > 0:
+        return 'marathi'
+
+    # Ambiguous case (e.g., exactly one indicator): use LLM as a tie-breaker
     try:
         language_detection_prompt = f"""
 You are a language detection expert. Analyze the following text and determine if it's written in English or Romanized Marathi (Marathi words written using English/Latin script).
 
 Text to analyze: "{query}"
-
-Consider these factors:
-1. If the text contains Marathi words written in English script (like "kasa", "milwaycha", "karaycha"), it's Romanized Marathi
-2. If the text uses Marathi grammar patterns but English script, it's Romanized Marathi
-3. If the text is purely English with no Marathi influence, it's English
-4. Mixed language queries with Marathi words should be classified as Marathi
 
 Respond with only one word: "english" or "marathi"
 """
@@ -69,20 +107,19 @@ Respond with only one word: "english" or "marathi"
             temperature=0.1,
             max_tokens=10,
         )
-        
+
         detected_lang = response.choices[0].message.content.strip().lower()
-        
-        # Clean up the response (remove any extra text)
-        if 'marathi' in detected_lang:
+
+        # Strict normalization of response
+        if detected_lang in {"marathi", "romanized marathi"}:
             return 'marathi'
-        elif 'english' in detected_lang:
+        if detected_lang == 'english':
             return 'english'
-        else:
-            # Fallback to rule-based detection if LLM response is unclear
-            return fallback_language_detection(query)
-            
+        # Default to English if unclear in ambiguous scenarios
+        return 'english'
+
     except Exception as e:
-        # If LLM fails, fall back to rule-based detection
+        # If LLM fails, use fallback
         print(f"LLM language detection failed: {e}")
         return fallback_language_detection(query)
 
@@ -228,6 +265,36 @@ Answer:
 {links_md}
 """
 
+    # Build detailed log before calling the LLM
+    try:
+        matches_log_lines = []
+        for idx, m in enumerate(matches, start=1):
+            meta = m.get("metadata", {}) or {}
+            source = meta.get("source", "")
+            text_snippet = (meta.get("text", "") or "")[:500]
+            score = m.get("score", None)
+            matches_log_lines.append(
+                f"  {idx}. score={score} source={source}\n     snippet={text_snippet}"
+            )
+
+        matches_section = "\n".join(matches_log_lines) if matches_log_lines else "  (none)"
+
+        detailed_log = (
+            f"==== Chat Request Log ====\n"
+            f"Time: {datetime.utcnow().isoformat()}Z\n"
+            f"Session ID: {session_id}\n"
+            f"Detected Language: {detected_language}\n"
+            f"User Query: {query}\n"
+            f"\nRecent History Used (last 5):\n{history_context}\n"
+            f"\nRetrieved Matches ({len(matches)}):\n{matches_section}\n"
+            f"\nRelated Links ({len(related_links)}): {related_links}\n"
+            f"Additional Links from Keywords ({len(additional_links)}): {additional_links}\n"
+            f"All Links Used in Prompt ({len(all_links)}): {all_links}\n"
+            f"\nPrompt sent to OpenAI (model=gpt-4o-mini):\n{prompt}"
+        )
+    except Exception:
+        detailed_log = None
+
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
@@ -244,6 +311,14 @@ Answer:
 
     add_to_history(session_id, "user", query)
     add_to_history(session_id, "assistant", answer)
+
+    # Append answer to the detailed log and write to file
+    try:
+        if detailed_log is not None:
+            full_log = detailed_log + f"\n\nLLM Answer:\n{answer}\n============================="
+            _append_log_entry(full_log)
+    except Exception:
+        pass
 
     return answer, [m["metadata"]["source"] for m in matches]
 
