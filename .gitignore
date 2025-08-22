@@ -11,4 +11,4 @@ __pycache__/
 .env.test.local
 .env.production.local
 .DS_Store
-Thumbs.db
+Thumbs.db@data/
